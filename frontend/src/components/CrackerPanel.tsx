@@ -530,7 +530,7 @@ export function CrackerPanel({
             onChange={(e) => setDanishWordlist(e.target.checked)}
             className="rounded"
           />
-          Danish place names
+          Danish channels
         </label>
 
         <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
@@ -689,9 +689,11 @@ export function CrackerPanel({
         false-positives.
         <strong> Decrypt historical</strong> will run an async job on any channel name it finds to
         see if any historically captured packets will decrypt with that key.
-        <strong> Danish place names</strong> adds Danish kommune/town names to the dictionary pass
-        (only ASCII a-z0-9- room names are attempted, so æ/ø/å are transliterated to ae/oe/aa and
-        will only match channels created the same way).
+        <strong> Danish channels</strong> adds Danish kommune/town names plus commonly-observed
+        regional and community channel names (postal-code-style codes, Nordic neighbors, generic
+        mesh channels) to the dictionary pass (only ASCII a-z0-9- room names are attempted, so
+        æ/ø/å place names are transliterated to ae/oe/aa and will only match channels created the
+        same way).
         <strong> Turbo mode</strong> will push your GPU to the max (target dispatch time of 10s) and
         may allow accelerated searching and/or system instability.
       </p>
