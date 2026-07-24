@@ -6,6 +6,7 @@ import { api } from '../api';
 import { toast } from './ui/sonner';
 import { cn } from '@/lib/utils';
 import { extractPacketPayloadHex } from '../utils/pathUtils';
+import { DANISH_WORDLIST } from '../data/danishPlacenames';
 
 interface CrackedChannel {
   channelName: string;
@@ -44,6 +45,7 @@ export function CrackerPanel({
   const [decryptHistorical, setDecryptHistorical] = useState(true);
   const [turboMode, setTurboMode] = useState(false);
   const [twoWordMode, setTwoWordMode] = useState(false);
+  const [danishWordlist, setDanishWordlist] = useState(false);
   const [progress, setProgress] = useState<ProgressReport | null>(null);
   const [queue, setQueue] = useState<Map<number, QueueItem>>(new Map());
   const [crackedChannels, setCrackedChannels] = useState<CrackedChannel[]>([]);
@@ -63,6 +65,8 @@ export function CrackerPanel({
   const decryptHistoricalRef = useRef(true);
   const turboModeRef = useRef(false);
   const twoWordModeRef = useRef(false);
+  const danishWordlistRef = useRef(false);
+  const englishWordlistRef = useRef<string[] | null>(null);
   const undecryptedIdsRef = useRef<Set<number>>(new Set());
   const seenPayloadsRef = useRef<Set<string>>(new Set());
   const existingChannelKeysRef = useRef<Set<string>>(new Set());
@@ -90,8 +94,13 @@ export function CrackerPanel({
 
     import('meshcore-hashtag-cracker/wordlist')
       .then(({ ENGLISH_WORDLIST }) => {
+        englishWordlistRef.current = ENGLISH_WORDLIST;
         if (crackerRef.current) {
-          crackerRef.current.setWordlist(ENGLISH_WORDLIST);
+          crackerRef.current.setWordlist(
+            danishWordlistRef.current
+              ? [...ENGLISH_WORDLIST, ...DANISH_WORDLIST]
+              : ENGLISH_WORDLIST
+          );
           setWordlistLoaded(true);
         }
       })
@@ -102,6 +111,17 @@ export function CrackerPanel({
         });
       });
   }, [visible, wordlistLoaded]);
+
+  // Rebuild the active wordlist when the Danish toggle changes after the base list has loaded
+  useEffect(() => {
+    danishWordlistRef.current = danishWordlist;
+    if (!wordlistLoaded || !crackerRef.current || !englishWordlistRef.current) return;
+    crackerRef.current.setWordlist(
+      danishWordlist
+        ? [...englishWordlistRef.current, ...DANISH_WORDLIST]
+        : englishWordlistRef.current
+    );
+  }, [danishWordlist, wordlistLoaded]);
 
   // Fetch undecrypted packet count
   useEffect(() => {
@@ -506,6 +526,16 @@ export function CrackerPanel({
         <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
           <input
             type="checkbox"
+            checked={danishWordlist}
+            onChange={(e) => setDanishWordlist(e.target.checked)}
+            className="rounded"
+          />
+          Danish place names
+        </label>
+
+        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+          <input
+            type="checkbox"
             checked={turboMode}
             onChange={(e) => setTurboMode(e.target.checked)}
             className="rounded"
@@ -659,6 +689,9 @@ export function CrackerPanel({
         false-positives.
         <strong> Decrypt historical</strong> will run an async job on any channel name it finds to
         see if any historically captured packets will decrypt with that key.
+        <strong> Danish place names</strong> adds Danish kommune/town names to the dictionary pass
+        (only ASCII a-z0-9- room names are attempted, so æ/ø/å are transliterated to ae/oe/aa and
+        will only match channels created the same way).
         <strong> Turbo mode</strong> will push your GPU to the max (target dispatch time of 10s) and
         may allow accelerated searching and/or system instability.
       </p>
